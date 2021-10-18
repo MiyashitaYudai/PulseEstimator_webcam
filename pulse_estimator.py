@@ -129,7 +129,7 @@ class pulseEstimator:
         text = "(estimate: %0.1f bpm)" % (bpm)
         cv2.putText(image, text, (int(200), int(200)), cv2.FONT_HERSHEY_PLAIN, 4, 2)
         cv2.imshow('MediaPipe Face Detection', image)
-
+        return bpm
 
     def process(self):
         processed = np.array(self.mean_value_data_buffer)
@@ -175,6 +175,34 @@ class pulseEstimator:
         return bpm
 
 
+
+def plot_BPM(bpm_data, plot_image, size):
+
+    n_plots = len(bpm_data)
+    if n_plots < 2:
+        return plot_image
+     
+    if n_plots >= size[0]:
+        plot_image = cv2.line(plot_image, (0, 0), (1, size[1]), (0, 0, 0), 1)
+        plot_image = np.roll(plot_image, -1, axis=1)
+
+    idx = n_plots - 2
+    bpm_start = float(bpm_data[idx])
+    bpm_end = float(bpm_data[idx + 1])
+
+    bpm_start_norm = int(size[1] - ((bpm_start / 150.0) * size[1]))
+    bpm_end_norm = int(size[1] - ((bpm_end / 150.0) * size[1]))
+
+    plot_start = (n_plots - 2, bpm_start_norm)
+    plot_end = (n_plots - 1, bpm_end_norm)
+
+    cv2.line(plot_image, plot_start, plot_end, (255,255,255),1)    
+    cv2.imshow("BPM", plot_image)
+
+    return plot_image
+
+
+
 if __name__ == "__main__":
     # カメラ接続
     camera = cv2.VideoCapture(0)
@@ -183,6 +211,10 @@ if __name__ == "__main__":
 
     face_detector = faceDetector()
     pulse_estimator = pulseEstimator()
+
+    bpm_list = []
+    size = (640, 280)
+    plot_image = np.zeros((size[1], size[0]))
 
     while camera.isOpened():
         # カメラ画像取得
@@ -193,13 +225,14 @@ if __name__ == "__main__":
 
         # 顔の検出
         face_detect_results = face_detector.detect(image)
-
         pulse_estimator.set_face_detect_results(face_detect_results)
 
-        pulse_estimator.pulse_estimate(image)
+        # 脈拍の計測
+        bpm = pulse_estimator.pulse_estimate(image)
+        bpm_list.append(bpm)
 
-
-        
+        bpm_list = bpm_list[-640:]
+        plot_image = plot_BPM(bpm_list, plot_image, size)
         if cv2.waitKey(1) & 0xFF == 27:
             break
 
