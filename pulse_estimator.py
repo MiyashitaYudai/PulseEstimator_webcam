@@ -126,8 +126,6 @@ class pulseEstimator:
             bpm = self.process()
             break
 
-        text = "(estimate: %0.1f bpm)" % (bpm)
-        cv2.putText(image, text, (int(200), int(200)), cv2.FONT_HERSHEY_PLAIN, 4, 2)
         cv2.imshow('MediaPipe Face Detection', image)
         return bpm
 
@@ -197,6 +195,9 @@ def plot_BPM(bpm_data, plot_image, size):
     plot_end = (n_plots - 1, bpm_end_norm)
 
     cv2.line(plot_image, plot_start, plot_end, (255,255,255),1)    
+    text = "(estimate: %0.1f bpm)" % (bpm_data[-1])
+    cv2.rectangle(plot_image, (size[0] - 200, 0), (size[0], 80), (0, 0, 0), -1)
+    cv2.putText(plot_image, text, (size[0] - 200, 30), cv2.FONT_HERSHEY_PLAIN, 1, 2)
     cv2.imshow("BPM", plot_image)
 
     return plot_image
