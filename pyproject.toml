@@ -5,9 +5,10 @@ description = ""
 authors = ["Yudai Miyashita <yudai.miyashita@persol.co.jp>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">=3.7,<3.10"
 opencv-python = "^4.5.3"
 mediapipe = "^0.8.8"
+scipy = "^1.7.1"
 
 [tool.poetry.dev-dependencies]
 
