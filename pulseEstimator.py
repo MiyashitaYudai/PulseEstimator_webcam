@@ -21,7 +21,7 @@ class pulseEstimator:
                 data_length = self.buffer_size
 
             bpm = self.process(person)
-            person.bpm_list.append(bpm)
+            person.add_bpm(bpm)
 
 
     def process(self, person):

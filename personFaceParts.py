@@ -4,6 +4,8 @@ import time
 import numpy as np
 import mediapipe as mp
 
+from oneEuroFilter import OneEuroFilter
+
 
 class personFaceParts:
     def __init__(self, face_detection_result, width, height, id):
@@ -14,6 +16,15 @@ class personFaceParts:
         self.is_track_success = True
         self.bpm_list = []
         self.mean_value_data_list = []
+
+        config = {
+            'freq': 120,       # Hz
+            'mincutoff': 0.5,  # FIXME
+            'beta': 0.007,       # FIXME
+            'dcutoff': 1.0     # this one should be ok
+        }
+
+        self.filter = OneEuroFilter(**config)
 
         # 追跡時間
         self.track_start_time = time.time()
@@ -95,13 +106,19 @@ class personFaceParts:
         '''
         x, y, w, h = rect
         subframe = image[y:y + h, x:x + w, :]
+        subframe = cv2.medianBlur(subframe, 3)
         v1 = np.mean(subframe[:, :, 0])         # B
         v2 = np.mean(subframe[:, :, 1])         # G
         v3 = np.mean(subframe[:, :, 2])         # R
 
-        return (v1 + v2 + v3) / 3.
+        value = (v1 + v2 + v3) / 3.
+        return value
 
     def get_mean_pos(self):
         sum_pos = (self.right_eye_point + self.left_eye_point + self.nose_point + self.right_ear_point + self.left_ear_point)
         mean_pos = np.array([int(sum_pos[0] / 5.0), int(sum_pos[1] / 5.0)])
         return mean_pos
+
+    def add_bpm(self, bpm):
+        filtered_bpm = self.filter(bpm)
+        self.bpm_list.append(filtered_bpm)
