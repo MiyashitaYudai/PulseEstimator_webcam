@@ -5,4 +5,4 @@
 `poetry install`
 
 ## Usage
-`poetry run python pulse_estimator.py`
+`poetry run python main.py`
