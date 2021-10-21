@@ -18,10 +18,10 @@ class personFaceParts:
         self.mean_value_data_list = []
 
         config = {
-            'freq': 120,       # Hz
-            'mincutoff': 0.5,  # FIXME
-            'beta': 0.007,       # FIXME
-            'dcutoff': 1.0     # this one should be ok
+            'freq': 120,
+            'mincutoff': 0.5,
+            'beta': 0.007,
+            'dcutoff': 1.0
         }
 
         self.filter = OneEuroFilter(**config)
@@ -62,25 +62,34 @@ class personFaceParts:
     def track_failed(self):
         self.is_track_success = False        
 
+
     def convert_image_size_point(self, point):
         '''
         座標を画像座標に変換
         '''
         return np.array([int(point.x * self.width), int(point.y * self.height)])
 
-    def get_forehead_rect(self):
+
+    def get_search_rects(self):
         '''
-        おでこの矩形を取得
+        探索する矩形を取得
         '''
         scale = math.sqrt(math.pow(self.right_eye_point[0] - self.left_eye_point[0], 2) + math.pow(self.right_eye_point[1] - self.left_eye_point[1], 2))
-        scale = int(scale / 2)
+        scale = int(scale / 3)
 
-        mean_eye_point = ((self.right_eye_point[0] + self.left_eye_point[0]) / 2.0, (self.right_eye_point[1] + self.left_eye_point[1]) / 2.0)
 
-        forehead_point = (int(2 * mean_eye_point[0] - self.nose_point[0]), int(2 * mean_eye_point[1] - self.nose_point[1]))
-        forehead_rect = (int(forehead_point[0] - scale / 2), int(forehead_point[1] - scale / 2), scale, scale)
+        rects = []
+        right_cheek_rect = (int(self.right_eye_point[0] - scale), int(self.nose_point[1]), scale, scale)
+        left_cheek_rect = (int(self.left_eye_point[0]), int(self.nose_point[1]), scale, scale)
 
-        return forehead_rect
+        rects.append(right_cheek_rect)
+        rects.append(left_cheek_rect)
+
+        # mean_eye_point = ((self.right_eye_point[0] + self.left_eye_point[0]) / 2.0, (self.right_eye_point[1] + self.left_eye_point[1]) / 2.0)
+        # forehead_point = (int(2 * mean_eye_point[0] - self.nose_point[0]), int(2 * mean_eye_point[1] - self.nose_point[1]))
+        # forehead_rect = (int(forehead_point[0] - scale / 2), int(forehead_point[1] - scale / 2), scale, scale)
+
+        return rects
 
     def draw_face_keypoints(self, image):
         '''
@@ -91,28 +100,40 @@ class personFaceParts:
         cv2.circle(image, self.nose_point, 3, (100, 100, 200), -1)
         cv2.circle(image, self.right_ear_point, 3, (100, 100, 200), -1)
         cv2.circle(image, self.left_ear_point, 3, (100, 100, 200), -1)
-
-        forehead_rect = self.get_forehead_rect()
-        forehead_point = np.array([int((forehead_rect[0] + forehead_rect[2] / 2)), int((forehead_rect[1] + forehead_rect[3] / 2))])
+        
+        rects = self.get_search_rects()
+        for rect in rects:
+            forehead_point = np.array([int((rect[0] + rect[2] / 2)), int((rect[1] + rect[3] / 2))])
+            cv2.rectangle(
+                image, 
+                (rect[0], rect[1]),
+                (rect[0] + rect[2], rect[1] + rect[3]),
+                (100, 100, 200), 2)
 
         text = "user ID : " + str(self.id)
         cv2.putText(image, text, forehead_point, cv2.FONT_HERSHEY_PLAIN, 1, 2)
 
         return image
 
-    def get_subface_means(self, image, rect):
+    def get_subface_means(self, image):
         '''
         矩形内の平均輝度を取得
         '''
-        x, y, w, h = rect
-        subframe = image[y:y + h, x:x + w, :]
-        subframe = cv2.medianBlur(subframe, 3)
-        v1 = np.mean(subframe[:, :, 0])         # B
-        v2 = np.mean(subframe[:, :, 1])         # G
-        v3 = np.mean(subframe[:, :, 2])         # R
 
-        value = (v1 + v2 + v3) / 3.
-        return value
+        rects = self.get_search_rects()
+        value_sum = 0
+        for rect in rects:
+            x, y, w, h = rect
+            subframe = image[y:y + h, x:x + w, :]
+            subframe = cv2.medianBlur(subframe, 5)
+            v1 = np.mean(subframe[:, :, 0])         # B
+            v2 = np.mean(subframe[:, :, 1])         # G
+            v3 = np.mean(subframe[:, :, 2])         # R
+            value_sum +=(v1 * 0.2 + v2 * 0.6 + v3 * 0.2)
+
+        value_mean = value_sum / len(rects)
+
+        return value_mean
 
     def get_mean_pos(self):
         sum_pos = (self.right_eye_point + self.left_eye_point + self.nose_point + self.right_ear_point + self.left_ear_point)

@@ -34,6 +34,32 @@ def plot_BPM(tracker, plot_image, size):
 
     return plot_image
 
+def plot_value(tracker, plot_image, size):
+
+    for person in tracker.tracking_person_list:
+        n_plots = len(person.mean_value_data_list)
+        if n_plots < 2:
+            return plot_image
+        
+        if n_plots >= 250:
+            plot_image = cv2.line(plot_image, (0, 0), (1, size[1]), (0, 0, 0), 1)
+            plot_image = np.roll(plot_image, -1, axis=1)
+
+        idx = n_plots - 2
+        bpm_start = float(person.mean_value_data_list[idx])
+        bpm_end = float(person.mean_value_data_list[idx + 1])
+
+        bpm_start_norm = int(size[1] - ((bpm_start / 150.0) * size[1]))
+        bpm_end_norm = int(size[1] - ((bpm_end / 150.0) * size[1]))
+
+        plot_start = (n_plots - 2, bpm_start_norm)
+        plot_end = (n_plots - 1, bpm_end_norm)
+
+        cv2.line(plot_image, plot_start, plot_end, (255,255,255),1)    
+
+    return plot_image
+
+
 
 if __name__ == "__main__":
     # カメラ接続

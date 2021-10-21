@@ -9,8 +9,7 @@ class pulseEstimator:
         bpm = 0
         for person in tracker.tracking_person_list:
             if person.is_track_success:
-                forehead_rect = person.get_forehead_rect()
-                mean_value = person.get_subface_means(image, forehead_rect)
+                mean_value = person.get_subface_means(image)
                 person.mean_value_data_list.append(mean_value)
 
             # 指定したサイズだけ輝度値を保持する
