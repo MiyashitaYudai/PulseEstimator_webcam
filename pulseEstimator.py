@@ -53,8 +53,8 @@ class pulseEstimator:
         freqs = float(fps) / data_length * np.arange(data_length / 2 + 1)
         freqs = 60. * freqs
 
-        # 50~180以内のデータをピック
-        idx = np.where((freqs > 50) & (freqs < 180))
+        # ローパス & ハイパスフィルタでノイズ除去
+        idx = np.where((freqs > 48) & (freqs < 180))
         if len(idx[0]) == 0:
             return 0
 

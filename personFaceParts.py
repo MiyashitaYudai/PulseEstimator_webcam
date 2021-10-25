@@ -120,16 +120,17 @@ class personFaceParts:
         矩形内の平均輝度を取得
         '''
 
+        blur_image = cv2.medianBlur(image, 5)
+
         rects = self.get_search_rects()
         value_sum = 0
         for rect in rects:
             x, y, w, h = rect
-            subframe = image[y:y + h, x:x + w, :]
-            subframe = cv2.medianBlur(subframe, 5)
+            subframe = blur_image[y:y + h, x:x + w, :]
             v1 = np.mean(subframe[:, :, 0])         # B
             v2 = np.mean(subframe[:, :, 1])         # G
             v3 = np.mean(subframe[:, :, 2])         # R
-            value_sum +=(v1 * 0.2 + v2 * 0.6 + v3 * 0.2)
+            value_sum +=(v1 * 0.1 + v2 * 0.8 + v3 * 0.1)
 
         value_mean = value_sum / len(rects)
 
